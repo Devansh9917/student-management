@@ -1,0 +1,170 @@
+import { useState, useEffect } from "react";
+
+function App() {
+  const [students, setStudents] = useState(() =>
+    JSON.parse(localStorage.getItem("students") || "[]")
+  );
+
+  const [name, setName] = useState("");
+  const [department, setDepartment] = useState("");
+  const [mark, setMark] = useState("");
+  const [editId, setEditId] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("students", JSON.stringify(students));
+  }, [students]);
+
+  function clearForm() {
+    setName("");
+    setDepartment("");
+    setMark("");
+    setEditId(null);
+    setError("");
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!name.trim()) {
+      setError("Enter student name");
+      return;
+    }
+
+    if (!department) {
+      setError("Select department");
+      return;
+    }
+
+    if (mark === "" || Number(mark) < 0 || Number(mark) > 100) {
+      setError("Enter mark between 0 and 100");
+      return;
+    }
+
+    const student = {
+      name: name.trim(),
+      department,
+      mark: Number(mark)
+    };
+
+    if (editId !== null) {
+      setStudents(students.map(s =>
+        s._id === editId ? { ...s, ...student } : s
+      ));
+    } else {
+      setStudents([...students, { _id: Date.now(), ...student }]);
+    }
+
+    clearForm();
+  }
+
+  function editStudent(s) {
+    setName(s.name);
+    setDepartment(s.department);
+    setMark(String(s.mark));
+    setEditId(s._id);
+    setError("");
+  }
+
+  function deleteStudent(id) {
+    setStudents(students.filter(s => s._id !== id));
+
+    if (editId === id) clearForm();
+  }
+
+  return (
+    <div>
+      <h1>Student Management System</h1>
+
+      <p>{error}</p>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          placeholder="Student Name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        />
+
+        <select
+          value={department}
+          onChange={e => setDepartment(e.target.value)}
+          required
+        >
+          <option value="">Select Department</option>
+          <option value="CSE">CSE</option>
+          <option value="ECE">ECE</option>
+          <option value="IT">IT</option>
+        </select>
+
+        <input
+          type="number"
+          placeholder="Mark"
+          min="0"
+          max="100"
+          value={mark}
+          onChange={e => setMark(e.target.value)}
+          required
+        />
+
+        <button type="submit">
+          {editId !== null ? "Update Student" : "Add Student"}
+        </button>
+
+        {editId !== null && (
+          <button type="button" onClick={clearForm}>
+            Cancel
+          </button>
+        )}
+      </form>
+
+      <h3>Student List</h3>
+
+      <p>Total Students: {students.length}</p>
+
+      <table border="1" cellPadding="8">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Mark</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {students.length === 0 ? (
+            <tr>
+              <td colSpan="4">No students found</td>
+            </tr>
+          ) : (
+            students.map(s => (
+              <tr key={s._id}>
+                <td>{s.name}</td>
+                <td>{s.department}</td>
+                <td>{s.mark}</td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={() => editStudent(s)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteStudent(s._id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default App;
